@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!-- <base href="/"> -->
+
+  <title>DeepInsights Pilot Program</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="<%= static_path + "/bootstrap/css/theme/" + theme + "/bootstrap.css" %>" rel="stylesheet" >
+  <!-- <link href="<%= "./static/bootstrap/css/theme/amelia/bootstrap.css" %>" rel="stylesheet"> -->
+
+  <!-- Custom styles for this template -->
+  <link href="<%= static_path + "/bootstrap/css/jumbotron-narrow.css" %>" rel="stylesheet" >
+  <!-- <link href="<%= "./static/bootstrap/css/jumbotron-narrow.css" %>" rel="stylesheet"> -->
+
+  <style>
+    #left-section {
+      background-image: url('https://example.com/image.jpg');
+      background-image: url('<%= static_path + "/images/drew-beamer.jpeg" %>');
+      background-size: cover;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <!-- Left Section -->
+      <div class="col-md-6" id="left-section"></div>
+      <!-- Right Section -->
+      <div class="col-md-6">
+        <div class="header">
+          <ul class="nav nav-pills pull-right">
+            <li class="active" id="signupPage"><a href="#">Signup</a></li>
+            <li class="dropdown show"><a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Integrations</a>
+              <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <li><a id="Zoom" class="dropdown-item" href="#">Zoom</a></li>
+                <li><a id="Gong" class="dropdown-item" href="#">Gong</a></li>
+              </ul>
+            </li>
+            <li><a href="https://www.getdeepinsights.com">About</a></li>
+            <li><a href="https://valley-beat-d42.notion.site/DeepInsights-Private-Beta-98ebf486085a412b84b056eb72774e33">Documentation</a></li>
+          </ul>
+          <h3 class="text-muted">DeepInsights Beta</h3>
+        </div>
+        <% if (flask_debug==='true' ) { %>
+          <div class="alert alert-danger">Flask is in debug mode. This is not safe for production.</div>
+        <% } %>
+        <% if (redirect==='true' && status==201) { %>
+          <div id="signupSuccess" class="alert alert-success">
+            <p id="signupSuccessText">DeepInsights is now connected to your Zoom account. For app setup and usage, please see this step-by-step <a href="https://valley-beat-d42.notion.site/DeepInsights-Private-Beta-98ebf486085a412b84b056eb72774e33">usage guide</a>.</p>
+          </div>
+        <% } %>
+          <div id="signupDuplicate" class="alert alert-success" style="display:none">
+            <p id="signupDuplicateText">Looks like you're already signed up with this email. No further action is required.</p>
+          </div>
+        <% if (redirect==='true' && status==409) { %>
+          <div id="signupDuplicate" class="alert alert-success" style="display:none">
+            <p id="signupDuplicateText">Looks like you're already signed up with this email. No further action is required.</p>
+          </div>
+        <% } %>
+          <div id="signupFailure" class="alert alert-success" style="display:none">
+            <p id="signupFailureText">Sorry, this email is not whitelisted for our "invite only" beta! We've added you to our waitlist, and will let you know as soon as a spot opens up. For questions, please email us directly at info@getdeepinsights.com</p>
+          </div>
+          <div id="signupError" class="alert alert-info" style="display:none">
+            <p id="signupErrorText">Well this is embarrassing. It looks like we're having trouble connecting right now. Please try again in a few minutes.</p>
+          </div>
+        <% if (redirect==='true' && status==500) { %>
+          <div id="signupError" class="alert alert-info">
+            <p id="signupErrorText">Well this is embarrassing. It looks like we're having trouble getting you on the list.</p>
+          </div>
+        <% } %>
+          <div id="redirect" class="alert alert-info" style="display:none">
+            <p id="redirectText">Please follow <a href="<%= "https://zoom.us/oauth/authorize?response_type=code&client_id=" + client_id + "&redirect_uri=" + redirect_url %>" style="background-color:rgb(255, 191, 0);">this link</a> to authorize Zoom access for DeepInsights.</p>
+          </div>
+        <% if (redirect==='false' ) { %>
+          <div id="main" class="jumbotron">
+            <!-- <h5>Verify your email to connect DeepInsights to your Zoom account</h5> -->
+            <p class="lead">Verify your email to connect DeepInsights to your Zoom account</p>
+            <p><a class="btn btn-lg btn-success" data-toggle="modal" href="#signupModal">Verify Email</a></p>
+            <!-- <p><a class="btn btn-lg btn-success" id="verifyEmail">Verify Email</a></p>  -->
+          </div>
+        <% } %>
+          <div id="gongInput" class="jumbotron" style="display:none">
+            <p class="lead">Get summaries of your Gong calls straight to your email.</p>
+            <form id="gongForm" role="form">
+              <input type="hidden" id="theme" name="theme" value="<%= theme %>" />
+              <div class="form-group">
+                <label for="link">Call Recording Link</label>
+                <input type="url" class="form-control" id="link" name="link" placeholder="Your Gong external recording link*">
+              </div>
+              <div class="form-group">
+                <label for="emailGong">Email Address</label>
+                <input type="email" class="form-control" id="emailGong" name="emailGong" placeholder="Your company email address*">
+              </div>
+            </form>
+            <p><a class="btn btn-primary btn-xs" id="summarizeGong">Summarize</a></p>
+          </div>
+
+          <div id="summarizeSuccess" class="jumbotron" style="display:none">
+            <div class="alert alert-success" id="summarizeSuccessText">Thank you. We'll email you the meeting summary shortly.</div>
+          </div>
+
+          <!-- <div id="signupInput" class="jumbotron" style="display:none">
+          <p class="lead">Please enter your name and company email.</p>
+          <form id="signupForm" role="form">
+            <input type="hidden" id="theme" name="theme" value="<%= theme %>"/>
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input type="text" class="form-control" id="name" name="name" placeholder="Your name">
+            </div>
+            <div class="form-group">
+              <label for="email">Email address</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="Your company email address">
+            </div>
+            <p><a class="btn btn-primary btn-xs" id="signup">Verfiy!</a></p>
+          </div> -->
+          <!-- <div class="modal-footer">
+            <button id="signup" type="button" class="btn btn-primary">Verfiy!</button>
+          </div> -->
+         <div class="footer">
+          <ul class="nav nav-pills pull-right">
+            <li><a href="https://www.getdeepinsights.com/privacy-policy">Privacy Policy</a></li>
+            <li><a href="https://www.getdeepinsights.com/terms-of-use">Terms of Use</a></li>
+            <li><a href="https://www.getdeepinsights.com/contact-us">Contact Us</a></li>
+          </ul>
+          <h5>&copy; 2023, DeepInsights AI Inc.</h5>
+        </div>
+      </div><!-- /right section -->
+     </div><!-- /row -->
+
+      <!-- Modal -->
+      <div class="modal fade" id="signupModal" tabindex="-1" role="dialog" aria-labelledby="signupModal" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title">Please enter your name and company email.</h4>
+            </div>
+            <div class="modal-body">
+              <form id="signupForm" role="form">
+                <input type="hidden" id="theme" name="theme" value="<%= theme %>" />
+                <div class="form-group">
+                  <label for="name">Name</label>
+                  <input type="text" class="form-control" id="name" name="name" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                  <label for="email">Email Address</label>
+                  <input type="email" class="form-control" id="email" name="email" placeholder="Your company email address*">
+                </div>
+              </form>
+              <div class="modal-footer">
+                <button id="signup" type="button" class="btn btn-primary">Verfiy!</button>
+              </div>
+            </div>
+                <!-- <div class="form-group">
+                  <label for="previewAccess">Interested in Preview Access?</label>
+                  <select class="form-control" name="previewAccess">
+                    <option>Yes</option>
+                    <option>No</option>
+                  </select>
+                </div> -->
+            <!-- <div class="modal-footer">
+              <button id="signup" type="button" class="btn btn-primary">Verfiy!</button>
+            </div> -->
+          </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+      </div><!-- /.modal -->
+
+
+  </div> <!-- /container -->
+
+  <script src="<%= static_path + "/jquery/jquery-1.11.3.min.js" %>"></script>
+  <script src="<%= static_path + "/bootstrap/js/bootstrap.min.js" %>"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $("#signupPage").click(function () {
+        redirect = 'false';
+        $("#gongInput").hide();
+        $("#summarizeSuccess").hide();
+        $("#signupSuccess").hide();
+        $("#main").show();
+        $("#signupError").hide();
+        $("#signupDuplicate").hide();
+        $("#signupFailure").hide();
+        $("#redirect").hide();
+      })
+
+      $("#Zoom").click(function () {
+        redirect = 'false';
+        $("#main").show();
+        $("#gongInput").hide();
+        $("#summarizeSuccess").hide();
+        $("#signupError").hide();
+        $("#signupDuplicate").hide();
+        $("#signupFailure").hide();
+        $("#signupSuccess").hide();
+        $("#redirect").hide();
+      })
+
+      $("#Gong").click(function () {
+        $("#gongInput").show();
+        $("#main").hide();
+        $("#summarizeSuccess").hide();
+        $("#signupError").hide();
+        $("#signupDuplicate").hide();
+        $("#signupFailure").hide();
+        $("#signupSuccess").hide();
+        $("#redirect").hide();
+      })
+
+      $("#signup").click(function () {
+        $.post("/verify", $("#signupForm").serialize(),
+          function (data) {
+            $("#redirect").show();
+            $("#main").hide();
+            $('#signupSuccess').hide();
+            $("#signupError").hide();
+            $("#signupFailure").hide();
+            $("#signupDuplicate").hide();
+          }
+        ).error(function (xhr) {
+            switch (xhr.status) {
+              case 409:
+                $("#signupDuplicate").show();
+                $('#signupSuccess').hide();
+                $('#redirect').hide();
+                $("#signupError").hide();
+                $("#signupFailure").hide();
+                $("#main").hide();
+                break;
+              case 410:
+                $("#signupFailure").show();
+                $('#signupSuccess').hide();
+                $('#redirect').hide();
+                $("#signupError").hide();
+                $("#signupDuplicate").hide();
+                $("#main").hide();
+                break;
+              default:
+                $("#signupError").show();
+                $('#signupSuccess').hide();
+                $('#redirect').hide();
+                $("#signupFailure").hide();
+                $("#signupDuplicate").hide();
+                $("#main").hide();
+            }
+          }).always(function () {
+            $("#signupModal").modal('hide');
+          });
+      })
+      
+      $("#summarizeGong").click(function () {
+        $.post("/summarize", $("#gongForm").serialize(),
+          function (data) {
+            $("#gongInput").hide();
+            $("#main").hide();
+            $("#signupError").hide();
+            $("#signupDuplicate").hide();
+            $("#signupFailure").hide();
+            $("#summarizeSuccess").show();
+            $("#signupSuccess").hide();
+          }
+        ).error(function (xhr) {
+          switch (xhr.status) {
+            case 410:
+              $("#signupFailure").show();
+              $('#summarizeSuccess').hide();
+              $("#signupError").hide();
+              $("#signupDuplicate").hide();
+              $("#gongInput").hide();
+              $("#main").hide();
+              $("#signupSuccess").hide();
+              break;
+            default:
+              $("#signupError").show();
+              $('#summarizeSuccess').hide();
+              $("#signupFailure").hide();
+              $("#signupDuplicate").hide();
+              $("#gongInput").hide();
+              $("#main").hide();
+              $("#signupSuccess").hide();
+          }
+        });
+      })
+    })
+  </script>
+ </body>
+</html>
